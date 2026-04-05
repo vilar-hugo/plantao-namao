@@ -1,0 +1,9 @@
+{
+  "name": "plantao-certo",
+  "version": "1.0.0",
+  "description": "Plantão Certo – AdminEASY",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
