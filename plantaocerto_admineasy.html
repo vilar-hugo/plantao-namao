@@ -1829,11 +1829,11 @@ let _currentProfile = null;
 
 // Inicializar estado do usuário após login
 async function inicializarUsuario() {
-  const { data: { user } } = await _supa.auth.getUser();
+  const { data: { user } } = await getSupa().auth.getUser();
   _currentUser = user;
   if (user) {
     // Buscar perfil do banco
-    const { data } = await _supa.from('profiles').select('*').eq('id', user.id).single();
+    const { data } = await getSupa().from('profiles').select('*').eq('id', user.id).single();
     _currentProfile = data;
     // Atualizar UI com dados reais
     if (data) {
@@ -1854,7 +1854,7 @@ async function inicializarUsuario() {
 // ── PERFIL ──
 async function salvarPerfil(dadosPerfil) {
   if (!_currentUser) return { error: 'Não autenticado' };
-  const { data, error } = await _supa.from('profiles').upsert({
+  const { data, error } = await getSupa().from('profiles').upsert({
     id: _currentUser.id,
     ...dadosPerfil
   });
@@ -1864,7 +1864,7 @@ async function salvarPerfil(dadosPerfil) {
 
 // ── PLANTÕES ──
 async function carregarPlantoesDisponiveis(cidade = '') {
-  let query = _supa.from('plantoes')
+  let query = getSupa().from('plantoes')
     .select(`*, cedente:profiles!plantoes_cedente_id_fkey(nome, crm, crm_uf, especialidade, nota_media)`)
     .eq('status', 'aberto')
     .order('created_at', { ascending: false });
@@ -1952,7 +1952,7 @@ async function publicarPlantaoNoBanco() {
   const btn = document.getElementById('btnPublicar');
   if (btn) { btn.textContent = 'Publicando...'; btn.disabled = true; }
 
-  const { data: plantao, error } = await _supa.from('plantoes').insert({
+  const { data: plantao, error } = await getSupa().from('plantoes').insert({
     cedente_id: _currentUser.id,
     hospital,
     email_instituicao: emailInst || null,
@@ -1979,7 +1979,7 @@ async function publicarPlantaoNoBanco() {
   }
 
   // Criar notificação para o próprio cedente
-  await _supa.from('notificacoes').insert({
+  await getSupa().from('notificacoes').insert({
     usuario_id: _currentUser.id,
     titulo: 'Plantão publicado com sucesso!',
     descricao: `Seu plantão no ${hospital} foi publicado. Candidatos já podem se inscrever.`,
@@ -2001,7 +2001,7 @@ async function confirmarCandidaturaReal() {
   if (!_plantaoAtualId) { fecharModal(); return; }
 
   // Verificar se já se candidatou
-  const { data: jaExiste } = await _supa.from('candidaturas')
+  const { data: jaExiste } = await getSupa().from('candidaturas')
     .select('id').eq('plantao_id', _plantaoAtualId).eq('medico_id', _currentUser.id).single();
 
   if (jaExiste) {
@@ -2010,7 +2010,7 @@ async function confirmarCandidaturaReal() {
     return;
   }
 
-  const { error } = await _supa.from('candidaturas').insert({
+  const { error } = await getSupa().from('candidaturas').insert({
     plantao_id: _plantaoAtualId,
     medico_id: _currentUser.id,
     status: 'aguardando'
@@ -2024,7 +2024,7 @@ async function confirmarCandidaturaReal() {
   }
 
   // Notificação para o médico
-  await _supa.from('notificacoes').insert({
+  await getSupa().from('notificacoes').insert({
     usuario_id: _currentUser.id,
     titulo: 'Candidatura enviada!',
     descricao: 'Sua candidatura foi enviada. O cedente irá avaliá-la e você será notificado.',
@@ -2039,14 +2039,14 @@ async function carregarGestaoFinanceira() {
   if (!_currentUser) return;
 
   // Plantões recebidos (como cessionário)
-  const { data: recebidos } = await _supa.from('plantoes')
+  const { data: recebidos } = await getSupa().from('plantoes')
     .select('*')
     .eq('cessionario_id', _currentUser.id)
     .in('status', ['confirmado'])
     .order('data', { ascending: false });
 
   // Plantões cedidos (como cedente)
-  const { data: cedidos } = await _supa.from('plantoes')
+  const { data: cedidos } = await getSupa().from('plantoes')
     .select('*')
     .eq('cedente_id', _currentUser.id)
     .in('status', ['confirmado'])
@@ -2067,7 +2067,7 @@ async function carregarGestaoFinanceira() {
 // ── NOTIFICAÇÕES ──
 async function carregarNotificacoes() {
   if (!_currentUser) return;
-  const { data } = await _supa.from('notificacoes')
+  const { data } = await getSupa().from('notificacoes')
     .select('*').eq('usuario_id', _currentUser.id)
     .order('created_at', { ascending: false }).limit(20);
 
@@ -2101,7 +2101,7 @@ async function marcarLida(id, el) {
   el.classList.remove('unread');
   const badge = el.querySelector('.notif-badge');
   if (badge) badge.remove();
-  await _supa.from('notificacoes').update({ lida: true }).eq('id', id);
+  await getSupa().from('notificacoes').update({ lida: true }).eq('id', id);
 }
 
 async function marcarTodasLidasDB() {
@@ -2111,13 +2111,13 @@ async function marcarTodasLidasDB() {
     const b = n.querySelector('.notif-badge');
     if (b) b.remove();
   });
-  await _supa.from('notificacoes').update({ lida: true }).eq('usuario_id', _currentUser.id);
+  await getSupa().from('notificacoes').update({ lida: true }).eq('usuario_id', _currentUser.id);
 }
 
 // ── CONTRATOS ──
 async function carregarContratos() {
   if (!_currentUser) return;
-  const { data } = await _supa.from('contratos')
+  const { data } = await getSupa().from('contratos')
     .select(`*, plantao:plantoes(hospital, data)`)
     .or(`cedente_id.eq.${_currentUser.id},cessionario_id.eq.${_currentUser.id}`)
     .order('created_at', { ascending: false });
@@ -2145,7 +2145,7 @@ async function carregarContratos() {
 // ── PLANTÕES DO CEDENTE ──
 async function carregarMeusPlantoesCedidos() {
   if (!_currentUser) return;
-  const { data } = await _supa.from('plantoes')
+  const { data } = await getSupa().from('plantoes')
     .select(`*, candidaturas(id, status, medico:profiles!candidaturas_medico_id_fkey(nome, crm, crm_uf, especialidade, nota_media))`)
     .eq('cedente_id', _currentUser.id)
     .order('created_at', { ascending: false });
@@ -2156,8 +2156,14 @@ async function carregarMeusPlantoesCedidos() {
   if (!container) return;
 
   if (data.length === 0) {
-    container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary);font-weight:600;">Você ainda não publicou nenhum plantão.<br><br><button onclick="navTo('novo_plantao')" style="background:var(--grad);color:#fff;border:none;border-radius:12px;padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;">+ Ceder meu primeiro plantão</button></div>';
-    return;
+    container.innerHTML = [
+        '<div style="text-align:center;padding:40px;color:var(--text-secondary);font-weight:600;">',
+        'Você ainda não publicou nenhum plantão.<br><br>',
+        '<button onclick="navTo(\'novo_plantao\')" ',
+        'style="background:var(--grad);color:#fff;border:none;border-radius:12px;',
+        'padding:12px 24px;font-size:14px;font-weight:700;cursor:pointer;font-family:Nunito,sans-serif;">',
+        '+ Ceder meu primeiro plantão</button></div>'
+      ].join('');    return;
   }
 
   const statusLabel = { aberto: 'Aberto', em_analise: 'Em análise', confirmado: 'Confirmado', cancelado: 'Cancelado' };
@@ -2208,10 +2214,10 @@ async function aceitarCandidatoReal(candidaturaId, plantaoId, nomeMedico, btn) {
   btn.textContent = '...';
 
   // Atualizar candidatura para aceito
-  await _supa.from('candidaturas').update({ status: 'aceito' }).eq('id', candidaturaId);
+  await getSupa().from('candidaturas').update({ status: 'aceito' }).eq('id', candidaturaId);
 
   // Atualizar plantão para confirmado
-  const { data: plantao } = await _supa.from('plantoes')
+  const { data: plantao } = await getSupa().from('plantoes')
     .select('*, cedente:profiles!plantoes_cedente_id_fkey(id), candidaturas(medico_id, status)')
     .eq('id', plantaoId).single();
 
@@ -2219,18 +2225,18 @@ async function aceitarCandidatoReal(candidaturaId, plantaoId, nomeMedico, btn) {
   const candAceita = (plantao?.candidaturas || []).find(c => c.status === 'aceito');
   const medicoId = candAceita?.medico_id;
 
-  await _supa.from('plantoes').update({
+  await getSupa().from('plantoes').update({
     status: 'confirmado',
     cessionario_id: medicoId
   }).eq('id', plantaoId);
 
   // Recusar outras candidaturas
-  await _supa.from('candidaturas').update({ status: 'recusado' })
+  await getSupa().from('candidaturas').update({ status: 'recusado' })
     .eq('plantao_id', plantaoId).neq('id', candidaturaId);
 
   // Gerar contrato
   const numContrato = 'ADM-' + new Date().getFullYear() + '-' + String(Date.now()).slice(-4);
-  await _supa.from('contratos').insert({
+  await getSupa().from('contratos').insert({
     plantao_id: plantaoId,
     cedente_id: _currentUser.id,
     cessionario_id: medicoId,
@@ -2241,7 +2247,7 @@ async function aceitarCandidatoReal(candidaturaId, plantaoId, nomeMedico, btn) {
 
   // Notificação para o médico aceito
   if (medicoId) {
-    await _supa.from('notificacoes').insert({
+    await getSupa().from('notificacoes').insert({
       usuario_id: medicoId,
       titulo: 'Candidatura aceita! 🎉',
       descricao: `Sua candidatura foi aceita. O contrato ${numContrato} foi gerado e está disponível em Conta → Meus Contratos.`,
@@ -2261,7 +2267,7 @@ async function aceitarCandidatoReal(candidaturaId, plantaoId, nomeMedico, btn) {
 }
 
 async function recusarCandidatoReal(candidaturaId, btn) {
-  await _supa.from('candidaturas').update({ status: 'recusado' }).eq('id', candidaturaId);
+  await getSupa().from('candidaturas').update({ status: 'recusado' }).eq('id', candidaturaId);
   const row = document.getElementById('cand-' + candidaturaId);
   if (row) { row.style.opacity = '0.4'; row.querySelectorAll('button').forEach(b => b.disabled = true); }
 }
@@ -2293,7 +2299,7 @@ async function salvarPerfilAposCadastro() {
   perfil.cidade = step3inputs[1]?.value || '';
   perfil.telefone = step3inputs[2]?.value || '';
 
-  await _supa.from('profiles').upsert({ id: _currentUser.id, ...perfil });
+  await getSupa().from('profiles').upsert({ id: _currentUser.id, ...perfil });
 }
 
 // ── HELPERS ──
@@ -2317,12 +2323,27 @@ function formatarData(iso) {
 
 // ─── NAVEGAÇÃO ───
 // ─── SUPABASE ───
-let _supa;
-try { const { createClient } = supabase; _supa = createClient(
-  'https://plxjseykrqzvnvgqlbyu.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBseGpzZXlrcnF6dm52Z3FsYnl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MTcwNTMsImV4cCI6MjA5MDk5MzA1M30.965bn72T2sUwpdrvzjAVjMCEmCCwUMwxpOOjxDRL52E'
-);
-} catch(e) { console.error("Supabase init error:", e); }
+// Inicialização lazy do Supabase - aguarda SDK carregar
+const SUPA_URL = 'https://plxjseykrqzvnvgqlbyu.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBseGpzZXlrcnF6dm52Z3FsYnl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MTcwNTMsImV4cCI6MjA5MDk5MzA1M30.965bn72T2sUwpdrvzjAVjMCEmCCwUMwxpOOjxDRL52E';
+let _supa = null;
+
+function getSupa() {
+  if (_supa) return _supa;
+  try {
+    if (typeof supabase !== 'undefined' && supabase.createClient) {
+      _supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+    }
+  } catch(e) {
+    console.warn('Supabase init error:', e);
+  }
+  return _supa;
+}
+
+// Inicializar imediatamente se disponível
+document.addEventListener('DOMContentLoaded', function() {
+  getSupa();
+});
 
 // ─── NAVEGAÇÃO ───
 function goTo(id) {
@@ -2354,7 +2375,7 @@ async function fazerLogin() {
   btn.disabled = true;
   erro.style.display = 'none';
 
-  const { data, error } = await _supa.auth.signInWithPassword({ email, password: senha });
+  const { data, error } = await getSupa().auth.signInWithPassword({ email, password: senha });
 
   if (error) {
     erro.textContent = error.message === 'Invalid login credentials'
@@ -2370,7 +2391,7 @@ async function fazerLogin() {
 
 // ─── AUTH: LOGIN GOOGLE ───
 async function loginGoogle() {
-  await _supa.auth.signInWithOAuth({
+  await getSupa().auth.signInWithOAuth({
     provider: 'google',
     options: { redirectTo: window.location.href }
   });
@@ -2406,7 +2427,7 @@ async function fazerCadastro() {
   btn.textContent = 'Criando conta...';
   btn.disabled = true;
 
-  const { data, error } = await _supa.auth.signUp({ email, password: senha });
+  const { data, error } = await getSupa().auth.signUp({ email, password: senha });
 
   if (error) {
     alert('Erro: ' + error.message);
@@ -2423,8 +2444,9 @@ async function fazerCadastro() {
 // ─── AUTH: SESSÃO ATIVA ───
 async function verificarSessao() {
   try {
-    if (!_supa) { goTo('login'); return; }
-    const { data, error } = await _supa.auth.getSession();
+    const supa = getSupa();
+    if (!supa) { goTo('login'); return; }
+    const { data, error } = await supa.auth.getSession();
     if (error) throw error;
     const session = data?.session;
     if (session) {
@@ -2442,7 +2464,7 @@ async function verificarSessao() {
 
 // ─── SAIR ───
 async function sair() {
-  await _supa.auth.signOut();
+  await getSupa().auth.signOut();
   goTo('login');
 }
 
@@ -2480,23 +2502,35 @@ function navTo(section) {
 }
 
 // ─── SPLASH ───
-setTimeout(function() {
-  // Fallback garantido: se após 5s ainda no splash, vai para login
-  setTimeout(function() {
-    try {
-      if (document.getElementById('splash').classList.contains('active')) {
-        goTo('login');
-      }
-    } catch(e) {}
-  }, 5000);
-  // Tentar verificar sessão
-  try {
-    verificarSessao();
-  } catch(e) {
-    console.warn('Splash error:', e);
+// Timer do splash: aguarda o SDK do Supabase antes de verificar sessão
+(function tentarIniciar(tentativa) {
+  tentativa = tentativa || 0;
+  // Fallback: após 8 segundos no splash, vai para login
+  if (tentativa === 0) {
+    setTimeout(function() {
+      try {
+        if (document.getElementById('splash').classList.contains('active')) {
+          console.warn('Splash timeout - indo para login');
+          goTo('login');
+        }
+      } catch(e) {}
+    }, 8000);
+  }
+  // SDK do Supabase disponível?
+  if (typeof supabase !== 'undefined' && supabase.createClient) {
+    getSupa(); // inicializar
+    setTimeout(function() {
+      try { verificarSessao(); }
+      catch(e) { console.warn('verificarSessao error:', e); goTo('login'); }
+    }, 300);
+  } else if (tentativa < 30) {
+    // Tentar novamente em 100ms
+    setTimeout(function() { tentarIniciar(tentativa + 1); }, 100);
+  } else {
+    // Desistir e ir para login
     goTo('login');
   }
-}, 1500);
+})(0);
 
 // ─── CADASTRO STEPS ───
 let tipoSelecionado = 'medico';
@@ -2708,7 +2742,7 @@ async function enviarRecuperacao() {
   const email = document.getElementById('recuperar-email').value.trim();
   const msg = document.getElementById('recuperar-msg');
   if (!email) { msg.textContent='Informe seu e-mail.'; msg.style.color='#EF4444'; msg.style.display='block'; return; }
-  const { error } = await _supa.auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
+  const { error } = await getSupa().auth.resetPasswordForEmail(email, { redirectTo: window.location.href });
   if (error) {
     msg.textContent = 'Erro: ' + error.message;
     msg.style.color = '#EF4444';
