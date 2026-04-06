@@ -2317,11 +2317,12 @@ function formatarData(iso) {
 
 // ─── NAVEGAÇÃO ───
 // ─── SUPABASE ───
-const { createClient } = supabase;
-const _supa = createClient(
+let _supa;
+try { const { createClient } = supabase; _supa = createClient(
   'https://plxjseykrqzvnvgqlbyu.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBseGpzZXlrcnF6dm52Z3FsYnl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU0MTcwNTMsImV4cCI6MjA5MDk5MzA1M30.965bn72T2sUwpdrvzjAVjMCEmCCwUMwxpOOjxDRL52E'
 );
+} catch(e) { console.error("Supabase init error:", e); }
 
 // ─── NAVEGAÇÃO ───
 function goTo(id) {
@@ -2421,15 +2422,20 @@ async function fazerCadastro() {
 
 // ─── AUTH: SESSÃO ATIVA ───
 async function verificarSessao() {
-  const { data: { session } } = await _supa.auth.getSession();
-  if (session) {
-    const onboarded = localStorage.getItem('pc_onboarded');
-    if (!onboarded) {
-      goTo('tela-onboarding');
+  try {
+    if (!_supa) { goTo('login'); return; }
+    const { data, error } = await _supa.auth.getSession();
+    if (error) throw error;
+    const session = data?.session;
+    if (session) {
+      const onboarded = localStorage.getItem('pc_onboarded');
+      goTo(onboarded ? 'app' : 'tela-onboarding');
+      if (onboarded) { navTo('inicio'); setTimeout(() => inicializarUsuario(), 100); }
     } else {
-      goToApp();
+      goTo('login');
     }
-  } else {
+  } catch (e) {
+    console.warn('Sessao error:', e);
     goTo('login');
   }
 }
@@ -2474,7 +2480,23 @@ function navTo(section) {
 }
 
 // ─── SPLASH ───
-setTimeout(() => verificarSessao(), 1800);
+setTimeout(function() {
+  // Fallback garantido: se após 5s ainda no splash, vai para login
+  setTimeout(function() {
+    try {
+      if (document.getElementById('splash').classList.contains('active')) {
+        goTo('login');
+      }
+    } catch(e) {}
+  }, 5000);
+  // Tentar verificar sessão
+  try {
+    verificarSessao();
+  } catch(e) {
+    console.warn('Splash error:', e);
+    goTo('login');
+  }
+}, 1500);
 
 // ─── CADASTRO STEPS ───
 let tipoSelecionado = 'medico';
