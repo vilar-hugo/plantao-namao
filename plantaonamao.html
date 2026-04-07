@@ -3626,7 +3626,7 @@ async function confirmarAceiteContrato() {
         titulo: 'Candidatura aceita! 🎉',
         descricao: 'Sua candidatura foi aceita. O contrato ' + p.numContrato + ' está disponível em Conta → Meus Contratos. Acesse para revisar e confirmar.',
         tipo: 'confirmacao'
-      });
+      }).catch(function(){});
     }
 
     // 6. Atualizar UI
@@ -5279,7 +5279,7 @@ async function marcarRecebidoReal(btn, plantaoId) {
       titulo: 'Pagamento confirmado',
       descricao: 'Pagamento registrado em ' + new Date().toLocaleDateString('pt-BR'),
       tipo: 'pagamento'
-    });
+    }).catch(function(){});
 
     mostrarToast('✓ Recebimento registrado em ' + new Date().toLocaleDateString('pt-BR'), 'var(--success)');
   } else {
@@ -5434,7 +5434,7 @@ async function _confirmarAceiteCessionario() {
         titulo: 'Contrato finalizado! ✅',
         descricao: nomeMeu + ' confirmou o aceite do contrato ' + cd.numero + '. Ambas as partes assinaram.',
         tipo: 'contrato'
-      });
+      }).catch(function(){});
     }
 
     mostrarToast('✓ Contrato ' + p.numContrato + ' assinado por ambas as partes!', 'var(--success)');
