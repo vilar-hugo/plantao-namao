@@ -1,7 +1,7 @@
 {
   "name": "plantao-na-mao",
-  "version": "1.0.0",
-  "description": "Plantão na Mão – AdminEASY | Gestão de plantões médicos",
+  "version": "1.5.0",
+  "description": "Plantão na Mão – Gestão de plantões médicos com segurança jurídica",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"

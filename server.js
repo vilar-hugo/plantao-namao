@@ -11,7 +11,12 @@ app.get('/', (req, res) => {
 
 // Rota de saúde para o Railway
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', app: 'Plantão na Mão', timestamp: new Date().toISOString() });
+  res.json({
+    status: 'ok',
+    app: 'Plantão na Mão',
+    version: '1.5.0',
+    timestamp: new Date().toISOString()
+  });
 });
 
 // Qualquer outra rota redireciona para o app
@@ -20,5 +25,5 @@ app.get('*', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Plantão na Mão rodando na porta ${PORT}`);
+  console.log(`Plantão na Mão v1.5.0 rodando na porta ${PORT}`);
 });
