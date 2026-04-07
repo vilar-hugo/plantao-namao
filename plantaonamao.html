@@ -5107,7 +5107,6 @@ function proximoOnboard() {
     // Ocultar step atual
     var curr = document.getElementById('ob' + _obAtual);
     if (curr) curr.classList.remove('active');
-    // Dot atual volta ao normal
     var dotCurr = document.getElementById('dot' + _obAtual);
     if (dotCurr) { dotCurr.style.width = '8px'; dotCurr.style.background = 'rgba(255,255,255,0.3)'; }
 
@@ -5116,33 +5115,30 @@ function proximoOnboard() {
     // Mostrar próximo step
     var next = document.getElementById('ob' + _obAtual);
     if (next) next.classList.add('active');
-    // Dot novo ativo
     var dotNext = document.getElementById('dot' + _obAtual);
     if (dotNext) { dotNext.style.width = '28px'; dotNext.style.background = 'linear-gradient(135deg,#7B2FE0,#00C2FF)'; }
 
-    // Último step: mudar botão
+    // Último step: mudar botão para Começar
     var btn = document.getElementById('btnProxOb');
-    if (_obAtual === _obTotal && btn) {
-      btn.textContent = 'Começar ✓';
+    if (btn) {
+      btn.textContent = (_obAtual === _obTotal) ? 'Começar ✓' : 'Próximo →';
     }
   } else {
+    // Já está no último — ir para cadastro
     concluirOnboarding();
   }
 }
 
 function concluirOnboarding() {
+  // Resetar estado
   _obAtual = 1;
-  // Resetar steps
   for (var i = 1; i <= _obTotal; i++) {
     var s = document.getElementById('ob' + i);
     if (s) s.classList.remove('active');
     var d = document.getElementById('dot' + i);
-    if (d) {
-      d.style.width = '8px';
-      d.style.background = 'rgba(255,255,255,0.3)';
-    }
+    if (d) { d.style.width = '8px'; d.style.background = 'rgba(255,255,255,0.3)'; }
   }
-  // Resetar primeiro step e dot
+  // Reativar primeiro step e dot
   var ob1 = document.getElementById('ob1');
   if (ob1) ob1.classList.add('active');
   var dot1 = document.getElementById('dot1');
@@ -5150,7 +5146,7 @@ function concluirOnboarding() {
   var btn = document.getElementById('btnProxOb');
   if (btn) btn.textContent = 'Próximo →';
 
-  // Navegar para o cadastro
+  // Navegar para cadastro
   navTo('register');
 }
 
