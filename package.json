@@ -1,12 +1,15 @@
 {
-  "name": "plantao-certo-admineasy",
+  "name": "plantao-na-mao",
   "version": "1.0.0",
-  "description": "Plantao Certo - AdminEASY",
+  "description": "Plantão na Mão – AdminEASY | Gestão de plantões médicos",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
   },
   "engines": {
     "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
   }
 }

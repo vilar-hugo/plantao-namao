@@ -1,14 +1,24 @@
-const http = require('http');
-const fs = require('fs');
+const express = require('express');
 const path = require('path');
 
+const app = express();
 const PORT = process.env.PORT || 3000;
 
-http.createServer((req, res) => {
-  res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-  fs.createReadStream(
-    path.join(__dirname, 'plantaocerto_admineasy.html')
-  ).pipe(res);
-}).listen(PORT, () => {
-  console.log('Plantao Certo rodando na porta ' + PORT);
+// Servir o arquivo principal
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'plantaonamao.html'));
+});
+
+// Rota de saúde para o Railway
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', app: 'Plantão na Mão', timestamp: new Date().toISOString() });
+});
+
+// Qualquer outra rota redireciona para o app
+app.get('*', (req, res) => {
+  res.redirect('/');
+});
+
+app.listen(PORT, () => {
+  console.log(`Plantão na Mão rodando na porta ${PORT}`);
 });
