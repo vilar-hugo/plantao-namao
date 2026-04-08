@@ -1077,24 +1077,13 @@
 
       <!-- Modo Plantão -->
       <div class="modo-card">
-        <div class="modo-btn" id="modoBtnMain" onclick="abrirModoPlantao()">
+        <div class="modo-btn" id="modoBtnMain" onclick="toggleModo(this)">
           <div class="modo-status">ON</div>
           <div class="modo-label">Modo Plantão</div>
         </div>
         <div class="cobertura-info">
-          <div class="cobertura-desc">Vai cobrir seu plantão</div>
-          <div class="cobertura-top">
-            <div class="cobertura-avatar" style="background:linear-gradient(135deg,#7EC4FF,#4DA8F5);">
-              <div class="cobertura-chat" style="position:absolute;bottom:-2px;right:-2px;">
-                <svg width="8" height="8" viewBox="0 0 24 24" fill="white"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-              </div>
-            </div>
-            <div class="cobertura-name">Drª Ana Carolina A.</div>
-          </div>
-          <div class="cobertura-time">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-            Hoje, 7:00 – 19:00
-          </div>
+          <div class="cobertura-desc" id="modoDescricao">Você está disponível para cobrir plantões</div>
+          <div style="font-size:11px;color:var(--text-secondary);margin-top:4px;" id="modoSubDesc">Toque em ON/OFF para alterar sua disponibilidade</div>
         </div>
       </div>
 
@@ -1141,14 +1130,8 @@
           <div class="cal-date">29</div><div class="cal-date">30</div>
         </div>
 
-        <div class="plantao-destaque">
-          <div class="plantao-date">—</div>
-          <div class="plantao-info">
-            <span>Período:</span><strong>12h</strong>
-            <span>Instituição:</span><strong>Hospital Exemplo</strong>
-            <span>Início:</span><strong>07h</strong>
-            <span>Especialidade:</span><strong>Generalista</strong>
-          </div>
+        <div id="proximoPlantaoCard" style="display:none;">
+          <div class="plantao-destaque" id="proximoPlantaoInfo"></div>
         </div>
         <div id="agendaPlantoes" style="padding:4px 0;">
           <div style="text-align:center;padding:8px;color:var(--text-secondary);font-size:12px;">Carregando plantões...</div>
@@ -1489,8 +1472,8 @@
       
       <div class="receber-card vencido">
         <div>
-          <div style="font-size:14px;font-weight:800;color:var(--text);">Hospital Exemplo 2</div>
-          <div style="font-size:12px;color:var(--text-secondary);">30/06/2024 · 12h · Clínica Médica</div>
+          <div style="font-size:14px;font-weight:800;color:var(--text);">—</div>
+          <div style="font-size:12px;color:var(--text-secondary);">—</div>
           <div style="font-size:11px;color:#DC2626;font-weight:700;margin-top:3px;">⚠ Vencido há 5 dias</div>
         </div>
         <div style="text-align:right;">
@@ -1513,7 +1496,7 @@
         <div style="height:1px;background:rgba(255,255,255,0.15);margin:10px 0;"></div>
         <div style="display:flex;justify-content:space-between;">
           <span style="font-size:14px;font-weight:700;color:#fff;">Saldo líquido</span>
-          <span style="font-size:18px;font-weight:900;color:#4ade80;">R$ 5.550</span>
+          <span style="font-size:18px;font-weight:900;color:#4ade80;">—</span>
         </div>
         <div style="margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.1);display:flex;justify-content:space-between;align-items:center;">
           <span style="font-size:12px;color:rgba(255,255,255,0.5);">Notas fiscais pendentes</span>
@@ -2744,7 +2727,7 @@ async function publicarPlantaoNoBanco() {
   const obs = document.getElementById('np-obs').value.trim();
   const setor = document.getElementById('np-setor').value.trim();
 
-  if (!hospital || !local || !data || !hora || !duracao || !esp || !valor || !pagto || !riscoSelecionado) {
+  if (!hospital || !data || !hora || !duracao || !esp || !valor || !pagto || !riscoSelecionado) {
     alert('Preencha todos os campos obrigatórios e selecione o nível de risco.');
     return;
   }
@@ -3792,12 +3775,18 @@ function cadastroSuccess() {
 // ─── MODO PLANTÃO ───
 function toggleModo(btn) {
   const status = btn.querySelector('.modo-status');
+  const desc = document.getElementById('modoDescricao');
+  const sub = document.getElementById('modoSubDesc');
   if (status.textContent === 'ON') {
     status.textContent = 'OFF';
     btn.style.background = 'linear-gradient(135deg, #6B7280, #9CA3AF)';
+    if (desc) desc.textContent = 'Você está indisponível para plantões';
+    if (sub) sub.textContent = 'Toque em OFF para voltar a ficar disponível';
   } else {
     status.textContent = 'ON';
     btn.style.background = 'linear-gradient(135deg, #7B2FE0, #00C2FF)';
+    if (desc) desc.textContent = 'Você está disponível para cobrir plantões';
+    if (sub) sub.textContent = 'Toque em ON/OFF para alterar sua disponibilidade';
   }
 }
 
@@ -5033,6 +5022,31 @@ async function carregarAgenda() {
     }).join('');
   } else {
     container.innerHTML = '<div style="text-align:center;padding:12px;color:var(--text-secondary);font-size:12px;">Nenhum plantão neste mês.</div>';
+  }
+
+  // Atualizar card do próximo plantão
+  var cardProx = document.getElementById('proximoPlantaoCard');
+  var infoProx = document.getElementById('proximoPlantaoInfo');
+  if (cardProx && infoProx) {
+    var hoje = new Date().toISOString().split('T')[0];
+    var proximos = (data || []).filter(function(p) { return p.data >= hoje; });
+    if (proximos.length > 0) {
+      var prox = proximos[0];
+      var dtProx = new Date(prox.data + 'T00:00:00');
+      var diaProx = String(dtProx.getDate()).padStart(2,'0');
+      var mesProxN = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'][dtProx.getMonth()];
+      infoProx.innerHTML =
+        '<div class="plantao-date">' + diaProx + '/' + mesProxN + '</div>' +
+        '<div class="plantao-info">' +
+        '<span>Período:</span><strong>' + (prox.duracao||'—') + '</strong>' +
+        '<span>Instituição:</span><strong>' + (prox.hospital||'—') + '</strong>' +
+        '<span>Início:</span><strong>' + (prox.hora_inicio||'—') + '</strong>' +
+        '<span>Especialidade:</span><strong>' + (prox.especialidade||'—') + '</strong>' +
+        '</div>';
+      cardProx.style.display = '';
+    } else {
+      cardProx.style.display = 'none';
+    }
   }
 }
 
