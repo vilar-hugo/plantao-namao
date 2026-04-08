@@ -3650,16 +3650,11 @@ async function verificarSessao() {
         navTo('inicio');
         setTimeout(function() { inicializarUsuario(); }, 100);
       } else {
-        goTo('tela-onboarding');
-        // Preencher identidade parcial com dados do OAuth se disponível
-        if (session.user && session.user.user_metadata) {
-          var meta = session.user.user_metadata;
-          var nomeMeta = meta.full_name || meta.name || '';
-          if (nomeMeta) {
-            var headerNome = document.getElementById('headerNome');
-            if (headerNome) headerNome.textContent = nomeMeta;
-          }
-        }
+        // Onboarding desabilitado — vai direto para o app
+        localStorage.setItem('pc_onboarded', '1');
+        goTo('app');
+        navTo('inicio');
+        setTimeout(function() { inicializarUsuario(); }, 100);
       }
     } else {
       goTo('login');
@@ -5098,58 +5093,12 @@ async function marcarRecebidoReal(btn, plantaoId) {
   }
 }
 
-// ─── ONBOARDING ───
+// ─── ONBOARDING (desabilitado) ───
 var _obAtual = 1;
 var _obTotal = 4;
 
-function proximoOnboard() {
-  if (_obAtual < _obTotal) {
-    var curr = document.getElementById('ob' + _obAtual);
-    if (curr) curr.classList.remove('active');
-    var dotCurr = document.getElementById('dot' + _obAtual);
-    if (dotCurr) {
-      dotCurr.style.width = '8px';
-      dotCurr.style.background = 'rgba(255,255,255,0.3)';
-    }
-    _obAtual++;
-    var next = document.getElementById('ob' + _obAtual);
-    if (next) next.classList.add('active');
-    var dotNext = document.getElementById('dot' + _obAtual);
-    if (dotNext) {
-      dotNext.style.width = '28px';
-      dotNext.style.background = 'linear-gradient(135deg,#7B2FE0,#00C2FF)';
-    }
-    var btn = document.getElementById('btnProxOb');
-    if (btn) {
-      btn.textContent = (_obAtual === _obTotal) ? 'Começar ✓' : 'Próximo →';
-    }
-  } else {
-    concluirOnboarding();
-  }
-}
-
-function concluirOnboarding() {
-  _obAtual = 1;
-  for (var i = 1; i <= _obTotal; i++) {
-    var s = document.getElementById('ob' + i);
-    if (s) s.classList.remove('active');
-    var d = document.getElementById('dot' + i);
-    if (d) {
-      d.style.width = '8px';
-      d.style.background = 'rgba(255,255,255,0.3)';
-    }
-  }
-  var ob1 = document.getElementById('ob1');
-  if (ob1) ob1.classList.add('active');
-  var dot1 = document.getElementById('dot1');
-  if (dot1) {
-    dot1.style.width = '28px';
-    dot1.style.background = 'linear-gradient(135deg,#7B2FE0,#00C2FF)';
-  }
-  var btn = document.getElementById('btnProxOb');
-  if (btn) btn.textContent = 'Próximo →';
-  navTo('register');
-}
+function proximoOnboard() { navTo('login'); }
+function concluirOnboarding() { navTo('login'); }
 
 // ─── AUTOCOMPLETE DE HOSPITAIS ───
 
